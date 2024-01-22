@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import XLSX from 'xlsx';
 import './App.css';
 
 const FileUpload = () => {
@@ -6,17 +7,17 @@ const FileUpload = () => {
   const [tableData, setTableData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
-  const allowedFileTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
-  
+
     if (selectedFile) {
       const fileName = selectedFile.name.toLowerCase();
       const isCsvOrExcel = /\.(csv|xls|xlsx)$/i.test(fileName);
-  
+
       if (isCsvOrExcel) {
         setFile(selectedFile);
+        readAndDisplayFile(selectedFile);
       } else {
         alert('Please select a valid CSV, XLS, or XLSX file.');
         // Optionally, you can clear the file input
@@ -24,30 +25,21 @@ const FileUpload = () => {
       }
     }
   };
-  
 
-  const handleUpload = () => {
-    if (!file) {
-      alert('Please select a file to upload.');
-      return;
-    }
+  const readAndDisplayFile = (selectedFile) => {
+    const reader = new FileReader();
 
-    const formData = new FormData();
-    formData.append('file', file);
+    reader.onload = (e) => {
+      const result = e.target.result;
+      const workbook = XLSX.read(result, { type: 'binary' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    fetch('contact-file-upload-backend.vercel.app/upload', {
-      method: 'POST',
-      body: formData,
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log('File uploaded successfully:', data);
-        setTableData(data.data || []);
-        setCurrentPage(1); // Reset to the first page after uploading a new file
-      })
-      .catch(error => {
-        console.error('Error uploading file:', error);
-      });
+      setTableData(data.slice(1)); // Assuming the first row is the header
+    };
+
+    reader.readAsBinaryString(selectedFile);
   };
 
   const handleNextPage = () => {
@@ -69,9 +61,8 @@ const FileUpload = () => {
     <div>
       <div className='upload'>
         <input type="file" onChange={handleFileChange} accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
-        <button onClick={handleUpload}>Upload</button>
       </div>
-      {tableData.length > 0 && (
+      {tableData.length >= 0 && (
         <div>
           <table>
             <thead>
