@@ -35,7 +35,7 @@ const FileUpload = () => {
     const formData = new FormData();
     formData.append('file', file);
 
-    fetch('http://localhost:3001/upload', {
+    fetch('contact-file-upload-backend.vercel.app/upload', {
       method: 'POST',
       body: formData,
     })
