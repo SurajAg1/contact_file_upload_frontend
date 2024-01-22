@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import './App.css';
 
 const FileUpload = () => {
